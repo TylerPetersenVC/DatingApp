@@ -1,5 +1,11 @@
+using System.Text;
+using API;
 using API.Data;
+using API.Extensions;
+using API.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 internal class Program
 {
@@ -8,25 +14,20 @@ internal class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
-
         builder.Services.AddControllers();
-        builder.Services.AddDbContext<DataContext>(opt =>
-        {
-            opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
-        });
-        builder.Services.AddCors();
+        builder.Services.AddApplicationServices(builder.Configuration);
+        builder.Services.AddIdentityServices(builder.Configuration);
 
-        var app = builder.Build();
+        var app = builder.Build(); // Builds the WebApplication and assigns it to 'app' variable
 
         // Configure the HTTP request pipeline.
-        app.UseHttpsRedirection();
+        app.UseCors(builder => builder.AllowAnyHeader().AllowAnyMethod().WithOrigins("https://localhost:4200")); // Adds a CORS middleware to your web application pipeline to allow cross domain requests.
 
-        app.UseAuthorization();
+        app.UseAuthentication(); // checks if token is valid
+        app.UseAuthorization(); // if token is valid, what are you allowed to do?
 
-        app.UseCors(builder => builder.AllowAnyHeader().AllowAnyMethod().WithOrigins("https://localhost:4200"));
+        app.MapControllers(); // Adds endpoints for controller actions to the IEndpointRouteBuilder without specifying any routes.
 
-        app.MapControllers();
-
-        app.Run();
+        app.Run(); // Runs an application and block the calling thread until host shutdown.
     }
 }
